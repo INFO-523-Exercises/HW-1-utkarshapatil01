@@ -1,11 +1,11 @@
 ---
 title: "HW-1-utkarshapatil01"
 author: "Utkarsha Patil"
-format: pdf
+format: html
 editor: visual
 ---
 
-# **R HW2 - Utkarsha Patil**
+# **R HW-1 - Utkarsha Patil**
 
 # **Getting to know your Data with R**
 
