@@ -1,0 +1,368 @@
+---
+title: "HW-1-utkarshapatil01"
+author: "Utkarsha Patil"
+format: pdf
+editor: visual
+---
+
+# **R HW2 - Utkarsha Patil**
+
+# **Getting to know your Data with R**
+
+## Installing Packages
+
+```{r, message=FALSE, warning=FALSE, error=FALSE}
+if ( !require('pacman'))
+  install.packages('pacman')
+```
+
+```{r, message=FALSE, warning=FALSE, error=FALSE}
+library(pacman)
+
+p_load(dlookr, # Data inspection and exploration
+       DMwR2, # Data Mining with R functions
+       GGally, # Pair-wise plots using ggplot2
+       Hmisc, # Data analysis 
+       palmerpenguins, # Alternative to the Iris dataset
+       tidyverse) # Data wrangling, manipulation, visualization
+```
+
+## Loading Data
+
+Following command will load the **`algae`** dataset into your R session, making it available for analysis.
+
+```{r}
+data(algae, package = "DMwR2") # Loading the algae dataset from the "DMwR2" package
+
+algae <- algae # Saving dataset in the variable
+```
+
+**glimpse()** will give you information about the dataset's variables, their data types, and the first few rows of data to help you understand its structure.
+
+```{r}
+algae |> glimpse() # Data inspection
+```
+
+## **Central tendency: mean, median, mode**
+
+Central tendency measures are used to describe the central or typical value in a dataset. The main measures of central tendency are the mean, median, and mode:
+
+1.  **Mean**
+
+The mean, also known as the average, is calculated by adding up all the values in a dataset and then dividing by the number of values. It is the most common measure of central tendency.
+
+the **`|>`** symbol represents the pipe operator, which is used for chaining or piping operations in a way that enhances code readability and maintainability.
+
+```{r}
+algae$a1 |> 
+  mean() # Selecting a1 col from dataset and passing value to mean() function using pipe operator
+```
+
+2.  **Median**
+
+The median is the middle value in a dataset when it is arranged in ascending or descending order. If there is an even number of values, the median is the average of the two middle values. The median is less affected by extreme outliers compared to the mean.
+
+```{r}
+algae$a1 |>
+  median()  # Selecting a1 col from dataset and passing value to median() function using pipe operator
+```
+
+3.  **Mode**
+
+The mode is the value that appears most frequently in a dataset. A dataset can have no mode if all values occur with the same frequency (i.e., it's multimodal), one mode if a single value occurs most frequently (unimodal), or multiple modes if multiple values have the same highest frequency.
+
+```{r}
+Mode <- function(x, na.rm=FALSE){
+if(na.rm) x<-x[!is.na(x)]
+ux <- unique (x)
+return (ux[which.max(tabulate(match(x, ux)))])
+}
+
+algae$a2 |> Mode()
+```
+
+**Using the `table()` Function:**
+
+One common way to find the mode is by using the **`table()`** function to create a frequency table of the values in your dataset. Then, you can find the value(s) with the highest frequency.
+
+```{r}
+# Create a frequency table
+freq_table <- table(algae$a2)
+
+# Find the mode(s)
+modes <- names(freq_table)[freq_table == max(freq_table)]
+cat("Mode(s):", modes, "\n")
+```
+
+## **`DMwRcentralValue()` function:**
+
+```{r}
+# Numerical variable
+algae$a1 |> centralValue()
+```
+
+```{r}
+# Nominal variable
+algae$speed |> centralValue()
+```
+
+## **Statistics of spread (variation)**
+
+describe how data points in a dataset are spread out or dispersed. These measures provide insights into the extent to which data points deviate from the central tendency and give a sense of the data's variability.
+
+### **Variance**
+
+Variance measures the average squared deviation of each data point from the mean.
+
+```{r}
+algae$a1 |> var()  # Selecting a1 col from dataset and passing value to var() function using pipe operator
+```
+
+### **Standard deviation**
+
+The standard deviation is the square root of the variance. It provides a measure of dispersion in the same units as the data, making it easier to interpret.
+
+```{r}
+algae$a1 |> sd()  # Selecting a1 col from dataset and passing value to sd() function using pipe operator
+```
+
+### **Range**
+
+The range is the simplest measure of spread and is calculated as the difference between the maximum and minimum values in the dataset. It provides an idea of how spread out the data is but can be heavily influenced by outliers.
+
+```{r}
+algae$a1 |> range() # Selecting a1 col from dataset and passing value to range() function using pipe operator
+```
+
+### **Maximum value**
+
+```{r}
+algae$a1 |> max() # Selecting a1 col from dataset and passing value to max() function using pipe operator
+```
+
+### **Minimum value**
+
+```{r}
+algae$a1 |> min() # Selecting a1 col from dataset and passing value to max() function using pipe operator
+```
+
+### **Quantiles**
+
+Quantiles are the set of values/points that divides the dataset into groups of equal size.
+
+```{r}
+algae$a1 |> quantile() # Selecting a1 col from dataset and passing value to quantile() function using pipe operator
+```
+
+Specifying specific quantiles:
+
+```{r}
+algae$a1 |> quantile(probs = c(0.2, 0.8)) # Calculating specific i.e. 20th and 80th quartiles of the data
+```
+
+### **Interquartile range**
+
+The IQR is the range between the first quartile (25th percentile) and the third quartile (75th percentile) of the data. It measures the spread of the middle 50% of the data and is robust to outliers.
+
+```{r}
+algae$a1 |> IQR() # Selecting a1 col from dataset and passing value to IQR() function using pipe operator
+```
+
+## **Missing values**
+
+Missing values are typically represented as **`NA`** (which stands for "Not Available"). There are various ways to identify, handle, and analyze missing values in a dataset.
+
+```{r, message=FALSE, warning=FALSE, error=FALSE}
+if ( !require('purrr'))
+  install.packages('purrr')
+library('purrr')
+```
+
+**`purrr::map_dbl(~sum(is.na(.)))`**: This code applies the function **`~sum(is.na(.))`** to each column of a dataset. The **`~`** is used to create a formula or lambda function. Inside the function, **`sum(is.na(.))`** calculates the sum of missing values (**`NA`**) in each column.
+
+```{r}
+# Compute the total number of NA values in the dataset
+nas <- algae %>% 
+  purrr::map_dbl(~sum(is.na(.))) %>% 
+  sum()
+
+cat("The dataset contains ", nas, "NA values. \n")
+```
+
+```{r, message=FALSE, warning=FALSE}
+# Compute the number of incomplete rows in the dataset
+incomplete_rows <- algae %>% 
+  summarise_all(~!complete.cases(.)) %>%
+  nrow()
+
+cat("The dataset contains ", incomplete_rows, "(out of ", nrow(algae),") incomplete rows. \n")
+```
+
+## **Summaries of a dataset**
+
+the **`summary()`** function is used to generate a statistical summary of numeric or complex data. It provides various statistics for each variable or column in a dataset.
+
+```{r}
+algae |> summary() # Selecting a1 col from dataset and passing value to summary() function using pipe operator
+```
+
+The **`describe()`** function provides a comprehensive summary of various aspects of your data, including measures of central tendency, dispersion, distributions, and more.
+
+```{r}
+data("penguins")
+penguins |> Hmisc::describe()
+```
+
+### **dlookr's describe()**
+
+```{r}
+penguins |> dlookr::describe()
+```
+
+## **Summaries on a subset of data**
+
+The **`summarize()`** function is used for aggregating and summarizing data in a data frame or data table.
+
+```{r}
+algae |>
+  summarise(avgNO3 = mean(NO3, na.rm=TRUE),
+            medA1 = median(a1))
+```
+
+The **`summarise_all()`** function is used to apply a summary function to all columns in a data frame, resulting in a summary statistic or value for each column. This is particularly useful when you want to calculate summary statistics for multiple columns simultaneously.
+
+```{r}
+algae |>
+  select(mxPH:Cl) |> # Select columns from mxPH to Cl and calculate mean and median
+  summarise_all(list(mean, median), na.rm = TRUE)
+
+```
+
+```{r}
+algae |>
+  select(a1:a7) |>
+  summarise_all(funs(var))
+```
+
+```{r}
+algae |>
+  select(a1:a7) |>
+  summarise_all(c("min", "max"))
+```
+
+## **Use summarise() with group_by()**
+
+The **`summarise()`** function in combination with **`group_by()`** is a powerful tool for performing group-wise summarization of data in R.
+
+```{r, message= FALSE, warning= FALSE}
+# Group the dataset by the "season" and "size" columns
+# Then, calculate the number of observations (nObs) and the median of the "a7" column (mA7) within each group
+algae |>
+  group_by(season, size) |>
+  summarise(nObs = n(), mA7 = median(a7))
+```
+
+```{r}
+# Group the dataset by the "species" column
+# Then, calculate the variance of the "bill_length_mm" column within each group, ignoring missing values
+
+penguins |> 
+  group_by(species) |>
+  summarise(var = var(bill_length_mm, na.rm = TRUE))
+```
+
+## **Aggregating data**
+
+Aggregating data in R typically involves summarizing, grouping, or transforming data to obtain meaningful insights or to prepare it for further analysis.
+
+```{r}
+penguins |>
+  group_by(species) |>  # group the "penguins" dataset by the "species" column
+  reframe(var = quantile(bill_length_mm, na.rm = TRUE))
+```
+
+```{r}
+penguins |>
+  group_by(species) |>
+  dlookr::describe(bill_length_mm)
+```
+
+## **\[Advanced\]**
+
+## **Getting to know your dataset:**
+
+1.  List data types of the attributes in your tidy dataset
+
+    -\> **`str()`** function to inspect the structure of the dataset and see the data types of each attribute:
+
+```{r}
+str(penguins)
+```
+
+2.  Check for skewness in data distribution in the attributes
+
+```{r, message=FALSE, warning=FALSE, error=FALSE}
+if ( !require('e1071'))
+  install.packages('e1071')
+
+# Load necessary libraries (choose one of the packages)
+library(e1071)  # For e1071 package
+
+# Select numeric attributes from the penguins dataset
+numeric_attributes <- penguins %>%
+  select_if(is.numeric)
+
+# Calculate skewness for each numeric attribute
+skewness_values <- sapply(numeric_attributes, skewness, na.rm = TRUE)
+
+# Create a data frame to display the results
+skewness_df <- data.frame(
+  Attribute = names(skewness_values),
+  Skewness = skewness_values
+)
+
+# Print the skewness values
+print(skewness_df)
+
+```
+
+3.  Check for correlations among attributes
+
+```{r}
+# Select numeric attributes from the penguins dataset
+numeric_attributes <- penguins %>%
+  select_if(is.numeric)
+
+# Calculate the correlation matrix
+correlation_matrix <- cor(numeric_attributes, use = "complete.obs")
+
+print(correlation_matrix)
+
+```
+
+4.  Examine the extent of missing data. What would be the best way to deal with the missing data in this case?
+
+```{r}
+# Check for missing data in the penguins dataset
+missing_data <- penguins %>%
+  summarise_all(~ sum(is.na(.)))
+
+# Print the number of missing values in each column
+print(missing_data)
+
+```
+
+**Dropping**: If you have a few missing values in specific columns or rows and the missings are random, you can choose to remove rows or columns with missing data using functions like **`na.omit()`** or **`drop_na()`**.
+
+```{r}
+# Remove rows with missing values from the penguins dataset
+removena_penguins <- drop_na(penguins)
+penguins
+
+# Check for missing data in the penguins dataset
+missing_data <- penguins %>%
+  summarise_all(~ sum(is.na(.)))
+
+# Print the number of missing values in each column
+print(missing_data)
+```
